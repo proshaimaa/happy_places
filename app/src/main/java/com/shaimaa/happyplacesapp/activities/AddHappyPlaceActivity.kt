@@ -1,4 +1,4 @@
-package com.shaimaa.happyplacesapp
+package com.shaimaa.happyplacesapp.activities
 
 import android.Manifest
 import android.app.Activity
@@ -22,6 +22,7 @@ import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import com.shaimaa.happyplacesapp.R
 import kotlinx.android.synthetic.main.activity_add_happy_place.*
 import java.io.File
 import java.io.FileOutputStream
@@ -34,6 +35,8 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
 
     private var cal = Calendar.getInstance()
     private lateinit var dateSetListener : DatePickerDialog.OnDateSetListener
+    private var latitude: Double = 0.0
+    private var longitude: Double = 0.0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,6 +59,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
 
         et_date.setOnClickListener(this)
         tv_add_image.setOnClickListener(this)
+        btnSave.setOnClickListener(this)
     }
 
     override fun onClick(v: View?) {
@@ -79,6 +83,9 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
                 }
                 pictureDialog.show()
             }
+            R.id.btnSave ->{
+
+            }
         }
     }
 
@@ -91,7 +98,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
             override fun onPermissionsChecked(p0: MultiplePermissionsReport?) {
                 if(p0!!.areAllPermissionsGranted()){
                     val galleryIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
-                    startActivityForResult(galleryIntent,CAMERA)
+                    startActivityForResult(galleryIntent, CAMERA)
                 }
             }
 
@@ -114,7 +121,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
             override fun onPermissionsChecked(p0: MultiplePermissionsReport?) {
                 if(p0!!.areAllPermissionsGranted()){
                     val galleryIntent = Intent(Intent.ACTION_PICK,MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                    startActivityForResult(galleryIntent,GALLERY)
+                    startActivityForResult(galleryIntent, GALLERY)
                 }
             }
 
