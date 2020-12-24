@@ -23,6 +23,8 @@ import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import com.shaimaa.happyplacesapp.R
+import com.shaimaa.happyplacesapp.database.DatabaseHandler
+import com.shaimaa.happyplacesapp.models.HappyPlaceModel
 import kotlinx.android.synthetic.main.activity_add_happy_place.*
 import java.io.File
 import java.io.FileOutputStream
@@ -35,6 +37,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
 
     private var cal = Calendar.getInstance()
     private lateinit var dateSetListener : DatePickerDialog.OnDateSetListener
+    private var saveImageToInternalStorage : Uri? = null
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
 
@@ -56,7 +59,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
             cal.set(Calendar.DAY_OF_MONTH,dayOfMonth)
             updateDateInView()
         }
-
+        updateDateInView()
         et_date.setOnClickListener(this)
         tv_add_image.setOnClickListener(this)
         btnSave.setOnClickListener(this)
@@ -83,8 +86,39 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
                 }
                 pictureDialog.show()
             }
-            R.id.btnSave ->{
+            R.id.btnSave -> {
+                when {
+                    et_title.text.isNullOrEmpty() -> {
+                        Toast.makeText(this, "please enter title", Toast.LENGTH_LONG).show()
+                    }
+                    et_description.text.isNullOrEmpty() -> {
+                        Toast.makeText(this, "please enter description", Toast.LENGTH_LONG).show()
+                    }
+                    et_location.text.isNullOrEmpty() -> {
+                        Toast.makeText(this, "please enter location", Toast.LENGTH_LONG).show()
+                    }
+                    saveImageToInternalStorage == null -> {
+                        Toast.makeText(this, "please select image", Toast.LENGTH_LONG).show()
+                    }
+                    else -> {
+                        val happyPlaceModel = HappyPlaceModel(
+                                0, et_title.text.toString(),
+                                saveImageToInternalStorage.toString(),
+                                et_description.text.toString(),
+                                et_date.text.toString(),
+                                et_location.text.toString(),
+                                latitude, longitude)
 
+                        val dbHandler = DatabaseHandler(this)
+                        val addHappyPlace = dbHandler.addHappyPlace(happyPlaceModel)
+
+                        if (addHappyPlace > 0) {
+                            Toast.makeText(this, "the happy place details added successfully", Toast.LENGTH_LONG).show()
+                            finish()
+                        }
+                    }
+
+                }
             }
         }
     }
@@ -167,7 +201,8 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
                     val contentUri = data.data
                     try {
                         val selectImageBitmap = MediaStore.Images.Media.getBitmap(this.contentResolver,contentUri)
-                        saveImageToInternalStorage(selectImageBitmap)
+
+                        saveImageToInternalStorage = saveImageToInternalStorage(selectImageBitmap)
                         iv_add_image.setImageBitmap(selectImageBitmap)
                     }catch (e: IOException){
                         e.printStackTrace()
@@ -176,7 +211,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
                 }
             }else if (requestCode == CAMERA){
                 val thumbNail : Bitmap = data!!.extras!!.get("data") as Bitmap
-                saveImageToInternalStorage(thumbNail)
+                saveImageToInternalStorage = saveImageToInternalStorage(thumbNail)
                 iv_add_image.setImageBitmap(thumbNail)
             }
         }
