@@ -29,7 +29,7 @@
                 android:layout_width="70dp"
                 android:layout_height="70dp"
                 android:src="@mipmap/ic_launcher"
-                app:civ_border_color="#757575" />
+                app:civ_border_color="@color/light_gray" />
 
             <LinearLayout
                 android:layout_width="match_parent"
