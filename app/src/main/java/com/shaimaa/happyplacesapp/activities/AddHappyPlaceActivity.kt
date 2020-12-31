@@ -1,6 +1,7 @@
 package com.shaimaa.happyplacesapp.activities
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.app.DatePickerDialog
@@ -10,13 +11,23 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
+import android.location.Address
+import android.location.Location
+import android.location.LocationManager
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.os.Looper
 import android.provider.MediaStore
 import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.widget.Toast
+import com.google.android.gms.location.*
+import com.google.android.libraries.places.api.Places
+import com.google.android.libraries.places.api.model.Place
+import com.google.android.libraries.places.widget.Autocomplete
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -25,11 +36,13 @@ import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import com.shaimaa.happyplacesapp.R
 import com.shaimaa.happyplacesapp.database.DatabaseHandler
 import com.shaimaa.happyplacesapp.models.HappyPlaceModel
+import com.shaimaa.happyplacesapp.utils.GetAddressFromLatLng
 import kotlinx.android.synthetic.main.activity_add_happy_place.*
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
+import java.lang.Exception
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -41,6 +54,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
     private var latitude: Double = 0.0
     private var longitude: Double = 0.0
     private var mHappyPlaceDetails: HappyPlaceModel? = null
+    private lateinit var mFusedLocationClient: FusedLocationProviderClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +67,12 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
         }
         toolbarAddPlace.setTitleTextColor(Color.WHITE)
         toolbarAddPlace.setSubtitleTextColor(Color.WHITE)
+
+        mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        if(!Places.isInitialized()){
+            Places.initialize(this,resources.getString(R.string.google_maps_key))
+        }
 
         if(intent.hasExtra(MainActivity.EXTRA_PLACE_DETAILS)){
             mHappyPlaceDetails = intent.getSerializableExtra(MainActivity.EXTRA_PLACE_DETAILS) as HappyPlaceModel
@@ -82,6 +102,43 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
         et_date.setOnClickListener(this)
         tv_add_image.setOnClickListener(this)
         btnSave.setOnClickListener(this)
+        et_location.setOnClickListener(this)
+        tv_selectCurrentLoc.setOnClickListener(this)
+    }
+
+    private fun isLocationEnabled(): Boolean{
+        val locationManager: LocationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        return locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
+                || locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
+    }
+    @SuppressLint("MissingPermission")
+    private fun requestNewLocationData(){
+        var mLocationRequest = LocationRequest()
+        mLocationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        mLocationRequest.interval = 1000
+        mLocationRequest.numUpdates = 1
+
+        mFusedLocationClient.requestLocationUpdates(
+            mLocationRequest,mLocationCallBack, Looper.myLooper())
+    }
+    private val mLocationCallBack = object : LocationCallback(){
+        override fun onLocationResult(p0: LocationResult?) {
+            val mLastLocation : Location = p0!!.lastLocation
+            latitude = mLastLocation.latitude
+            longitude = mLastLocation.longitude
+
+            val addressTask = GetAddressFromLatLng(this@AddHappyPlaceActivity,latitude,longitude)
+            addressTask.setAddressListener(object: GetAddressFromLatLng.AddressListener{
+
+                override fun onAddressFound(address: String?){
+                    et_location.setText(address)
+                }
+                override fun onError(){
+                    Log.e("Get Address:: ","something went wrong")
+                }
+            })
+            addressTask.getAddress()
+        }
     }
 
     override fun onClick(v: View?) {
@@ -142,9 +199,45 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
                                 finish()
                             }
                         }
-
                     }
-
+                }
+            }
+            R.id.et_location -> {
+                try {
+                    val fields = listOf(Place.Field.ID,Place.Field.NAME,Place.Field.LAT_LNG,Place.Field.ADDRESS)
+                    val intent = Autocomplete.IntentBuilder(AutocompleteActivityMode.FULLSCREEN,fields).build(this@AddHappyPlaceActivity)
+                    startActivityForResult(intent, PLACE_AUTOCOMPLETE_REQUEST_CODE)
+                }catch (e:Exception){
+                    e.printStackTrace()
+                }
+            }
+            R.id.tv_selectCurrentLoc -> {
+                if (!isLocationEnabled()) {
+                    Toast.makeText(
+                        this,
+                        "your location provider is turned off, please turn it on.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                    val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+                    startActivity(intent)
+                } else {
+                    Dexter.withActivity(this).withPermissions(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION
+                    )
+                        .withListener(object : MultiplePermissionsListener {
+                            override fun onPermissionsChecked(p0: MultiplePermissionsReport?) {
+                                if (p0!!.areAllPermissionsGranted()) {
+                                    requestNewLocationData()
+                                }
+                            }
+                            override fun onPermissionRationaleShouldBeShown(
+                                p0: MutableList<PermissionRequest>?,
+                                p1: PermissionToken?
+                            ) {
+                                showRationalDialogForPermission()
+                            }
+                        }).onSameThread().check()
                 }
             }
         }
@@ -240,6 +333,11 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
                 val thumbNail : Bitmap = data!!.extras!!.get("data") as Bitmap
                 saveImageToInternalStorage = saveImageToInternalStorage(thumbNail)
                 iv_add_image.setImageBitmap(thumbNail)
+            }else if(requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE){
+                val place: Place = Autocomplete.getPlaceFromIntent(data!!)
+                et_location.setText(place.address)
+                latitude = place.latLng!!.latitude
+                longitude = place.latLng!!.longitude
             }
         }
     }
@@ -262,5 +360,6 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
         private const val GALLERY = 1
         private const val CAMERA = 2
         private const val IMAGE_DIRECTORY = "HappyPlacesImages"
+        private const val PLACE_AUTOCOMPLETE_REQUEST_CODE = 3
     }
 }

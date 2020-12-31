@@ -1,5 +1,6 @@
 package com.shaimaa.happyplacesapp.activities
 
+import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
@@ -32,6 +33,12 @@ class HappyPlaceDetailsActivity : AppCompatActivity() {
             iv_happy_place.setImageURI(Uri.parse(happyPlaceDetailsModel.image))
             tv_happy_place_desc.text = happyPlaceDetailsModel.description
             tv_happy_place_loc.text = happyPlaceDetailsModel.location
+
+            btn_view_on_map.setOnClickListener {
+                val intent = Intent(this,MapActivity::class.java)
+                intent.putExtra(MainActivity.EXTRA_PLACE_DETAILS,happyPlaceDetailsModel)
+                startActivity(intent)
+            }
         }
     }
 }

@@ -68,6 +68,23 @@
                 app:layout_constraintTop_toBottomOf="@id/tv_happy_place_desc"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"/>
+
+            <Button
+                android:id="@+id/btn_view_on_map"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/shape_btn_rounded"
+                android:layout_marginTop="16dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp"
+                android:gravity="center"
+                android:text="view on map"
+                android:textSize="18sp"
+                app:layout_constraintTop_toBottomOf="@id/tv_happy_place_loc"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
         </androidx.constraintlayout.widget.ConstraintLayout>
 
     </ScrollView>

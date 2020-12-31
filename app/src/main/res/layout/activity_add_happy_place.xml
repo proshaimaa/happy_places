@@ -89,21 +89,23 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:hint="Location"
+                    android:focusable="false"
+                    android:focusableInTouchMode="false"
                     android:inputType="text"
                     android:textSize="18sp"/>
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
-                android:id="@+id/selectCurrentLoc"
+                android:id="@+id/tv_selectCurrentLoc"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="Select current location"
                 android:textColor="@color/indigo_500"
                 android:gravity="center"
-                android:textSize="18sp"
-                android:layout_marginTop="16dp"
+                android:textSize="16sp"
+                android:layout_marginTop="5dp"
                 android:clickable="true"
-                android:padding="8dp"
+                android:padding="10dp"
                 android:foreground="?attr/selectableItemBackground"
                 android:background="@drawable/shape_image_border"/>
 
