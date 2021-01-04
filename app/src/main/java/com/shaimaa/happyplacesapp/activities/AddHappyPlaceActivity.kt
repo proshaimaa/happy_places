@@ -11,7 +11,6 @@ import android.content.ContextWrapper
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Color
-import android.location.Address
 import android.location.Location
 import android.location.LocationManager
 import android.net.Uri
@@ -51,8 +50,8 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
     private var cal = Calendar.getInstance()
     private lateinit var dateSetListener : DatePickerDialog.OnDateSetListener
     private var saveImageToInternalStorage : Uri? = null
-    private var latitude: Double = 0.0
-    private var longitude: Double = 0.0
+    private var mLatitude: Double = 0.0
+    private var mLongitude: Double = 0.0
     private var mHappyPlaceDetails: HappyPlaceModel? = null
     private lateinit var mFusedLocationClient: FusedLocationProviderClient
 
@@ -71,7 +70,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
         mFusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         if(!Places.isInitialized()){
-            Places.initialize(this,resources.getString(R.string.google_maps_key))
+            Places.initialize(this,resources.getString(R.string.google_map_key))
         }
 
         if(intent.hasExtra(MainActivity.EXTRA_PLACE_DETAILS)){
@@ -92,8 +91,8 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
             et_description.setText(mHappyPlaceDetails!!.description)
             et_date.setText(mHappyPlaceDetails!!.date)
             et_location.setText(mHappyPlaceDetails!!.location)
-            longitude = mHappyPlaceDetails!!.longitude
-            latitude = mHappyPlaceDetails!!.latitude
+            mLongitude = mHappyPlaceDetails!!.longitude
+            mLatitude = mHappyPlaceDetails!!.latitude
 
             saveImageToInternalStorage = Uri.parse(mHappyPlaceDetails!!.image)
             iv_add_image.setImageURI(saveImageToInternalStorage)
@@ -124,10 +123,10 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
     private val mLocationCallBack = object : LocationCallback(){
         override fun onLocationResult(p0: LocationResult?) {
             val mLastLocation : Location = p0!!.lastLocation
-            latitude = mLastLocation.latitude
-            longitude = mLastLocation.longitude
+            mLatitude = mLastLocation.latitude
+            mLongitude = mLastLocation.longitude
 
-            val addressTask = GetAddressFromLatLng(this@AddHappyPlaceActivity,latitude,longitude)
+            val addressTask = GetAddressFromLatLng(this@AddHappyPlaceActivity,mLatitude,mLongitude)
             addressTask.setAddressListener(object: GetAddressFromLatLng.AddressListener{
 
                 override fun onAddressFound(address: String?){
@@ -183,7 +182,7 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
                                 et_description.text.toString(),
                                 et_date.text.toString(),
                                 et_location.text.toString(),
-                                latitude, longitude)
+                                mLatitude, mLongitude)
 
                         val dbHandler = DatabaseHandler(this)
                         if(mHappyPlaceDetails == null){
@@ -336,8 +335,8 @@ class AddHappyPlaceActivity : AppCompatActivity(), View.OnClickListener{
             }else if(requestCode == PLACE_AUTOCOMPLETE_REQUEST_CODE){
                 val place: Place = Autocomplete.getPlaceFromIntent(data!!)
                 et_location.setText(place.address)
-                latitude = place.latLng!!.latitude
-                longitude = place.latLng!!.longitude
+                mLatitude = place.latLng!!.latitude
+                mLongitude = place.latLng!!.longitude
             }
         }
     }
